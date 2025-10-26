@@ -19,20 +19,22 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] private float height;
     [SerializeField] private float rayon;
     [SerializeField] private int side;
+    [SerializeField][Range(0f, 360f)] private float tronqueAngle;
     [Header("Sphere")]
     [SerializeField] private float sRayon;
     [SerializeField] private int sSide;
     [SerializeField] private float sLoop;
+    [SerializeField][Range(0f, 360f)] private float sTronqueAngle;
     [Header("Cone")]
     [SerializeField] private float cRayon;
     [SerializeField] private float cHeight;
     [SerializeField] private int cSide;
     [SerializeField] private float cTronque;
+    [SerializeField][Range(0f,360f)] private float cTronqueAngle;
+
 
     private MeshRenderer mRenderer;
     private MeshFilter mFilter;
-
-
 
     private Mesh mesh;
     private List<Vector3> verticices = new List<Vector3>();
@@ -41,12 +43,12 @@ public class MeshGenerator : MonoBehaviour
     void Start()
     {
         Init();
-        Plane();
+        CreatMesh();
     }
 
     private void Update()
     {
-        Plane();
+        CreatMesh();
     }
 
 
@@ -60,7 +62,7 @@ public class MeshGenerator : MonoBehaviour
     }
 
 
-    private void Plane()
+    private void CreatMesh()
     {
         verticices.Clear();
         triangles.Clear();
@@ -68,8 +70,8 @@ public class MeshGenerator : MonoBehaviour
 
         //CreatPlane();
         //CreatCylindre();
-        CreatSphere();
-        //CreatCone();
+        //CreatSphere();
+        CreatCone();
         DrawMesh();
 
     }
@@ -78,19 +80,26 @@ public class MeshGenerator : MonoBehaviour
     {
         float angle = 0;
 
+        cTronque = Mathf.Clamp(cTronque, 0, cHeight);
         float y = cHeight / 2 - cTronque;
         float r = cTronque / cHeight * cRayon;
-        //float r = Mathf.Sqrt(Mathf.Max(0, cRayon * cRayon - y * y));
-
+        
         int vUp = CreatVertex(new Vector3(0, y, 0));
         int vDown = CreatVertex(new Vector3(0, -cHeight / 2, 0));
 
         int v1 = CreatVertex(new Vector3(cRayon * Mathf.Cos(angle), -cHeight / 2, cRayon * Mathf.Sin(angle)));
         int v2 = CreatVertex(new Vector3(r * Mathf.Cos(angle), y, r * Mathf.Sin(angle)));
 
+        if (cTronqueAngle != 0)
+        {
+            CreatTriangle(vDown, v2, v1);
+            if(cTronque != 0)
+                CreatTriangle(vDown, vUp, v2);
+        }
+
         for (int i = 0; i < cSide; i++)
         {
-            angle += 2 * Mathf.PI / cSide;
+            angle += (2 * Mathf.PI - cTronqueAngle*Mathf.Deg2Rad) / cSide;
             int v3 = CreatVertex(new Vector3(r * Mathf.Cos(angle), y, r * Mathf.Sin(angle)));
             int v4 = CreatVertex(new Vector3(cRayon * Mathf.Cos(angle), -cHeight / 2, cRayon * Mathf.Sin(angle)));
 
@@ -103,6 +112,14 @@ public class MeshGenerator : MonoBehaviour
             v1 = v4;
             v2 = v3;
         }
+
+        if (cTronqueAngle != 0)
+        {
+            CreatTriangle(vDown, v1, v2);
+            
+            if (cTronque != 0)
+                CreatTriangle(vDown, v2, vUp);
+        }
     }
 
     private void CreatSphere()
@@ -110,8 +127,13 @@ public class MeshGenerator : MonoBehaviour
         float angle = 0;
         float sHeight = sRayon * 2;
 
+        int vCenter = 0;
+        if(sTronqueAngle != 0 )
+            vCenter =  CreatVertex(Vector3.zero);
         int vUp = CreatVertex(new Vector3(0, sRayon, 0));
         int vDown = CreatVertex(new Vector3(0, -sRayon, 0));
+       
+  
         float deltaTheta = Mathf.PI / sLoop;
 
         for (int l = 0; l < sLoop; l++)
@@ -127,10 +149,14 @@ public class MeshGenerator : MonoBehaviour
 
             int v1 = CreatVertex(new Vector3(r1 * Mathf.Cos(angle), y1, r1 * Mathf.Sin(angle)));
             int v2 = CreatVertex(new Vector3(r2 * Mathf.Cos(angle), y2, r2 * Mathf.Sin(angle)));
+            if(sTronqueAngle != 0)
+            {
+                CreatTriangle(vCenter, v1, v2);
+            }
 
             for (int i = 0; i < sSide; i++)
             {
-                angle += 2 * Mathf.PI / sSide;
+                angle += (2 * Mathf.PI - sTronqueAngle * Mathf.Deg2Rad) / sSide;
                 int v3 = CreatVertex(new Vector3(r2 * Mathf.Cos(angle),y2, r2 * Mathf.Sin(angle)));
                 int v4 = CreatVertex(new Vector3(r1 * Mathf.Cos(angle), y1, r1 * Mathf.Sin(angle)));
                 CreatTriangle(v2, v1, v4);
@@ -138,7 +164,11 @@ public class MeshGenerator : MonoBehaviour
 
                 v1 = v4;
                 v2 = v3;
+            }
 
+            if (sTronqueAngle != 0)
+            {
+                CreatTriangle(vCenter, v2, v1);
             }
         }
     }
@@ -153,9 +183,15 @@ public class MeshGenerator : MonoBehaviour
         int v1 = CreatVertex(new Vector3(rayon * Mathf.Cos(angle), -height / 2, rayon * Mathf.Sin(angle)));
         int v2 = CreatVertex(new Vector3(rayon * Mathf.Cos(angle), height / 2, rayon * Mathf.Sin(angle)));
 
+        if (tronqueAngle != 0)
+        {
+            CreatTriangle(vDown, vUp, v2);
+            CreatTriangle(vDown, v2, v1);
+        }
+
         for (int i = 0; i < side; i++)
         {
-            angle += 2 * Mathf.PI / side;
+            angle += (2 * Mathf.PI - tronqueAngle * Mathf.Deg2Rad) / side;
             int v3 = CreatVertex(new Vector3(rayon * Mathf.Cos(angle), height / 2, rayon * Mathf.Sin(angle)));
             int v4 = CreatVertex(new Vector3(rayon * Mathf.Cos(angle), -height / 2, rayon * Mathf.Sin(angle)));
 
@@ -167,6 +203,12 @@ public class MeshGenerator : MonoBehaviour
 
             v1 = v4;
             v2 = v3;
+        }
+
+        if (tronqueAngle != 0)
+        {
+            CreatTriangle(vDown, v2, vUp);
+            CreatTriangle(vDown, v1, v2);
         }
     }
 
