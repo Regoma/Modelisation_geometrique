@@ -23,7 +23,7 @@ public class MeshGenerator : MonoBehaviour
     [Header("Sphere")]
     [SerializeField] private float sRayon;
     [SerializeField] private int sSide;
-    [SerializeField] private float sLoop;
+    [SerializeField] private int sLoop;
     [SerializeField][Range(0f, 360f)] private float sTronqueAngle;
     [Header("Cone")]
     [SerializeField] private float cRayon;
@@ -70,8 +70,8 @@ public class MeshGenerator : MonoBehaviour
 
         //CreatPlane();
         //CreatCylindre();
-        //CreatSphere();
-        CreatCone();
+        CreatSphere();
+        //CreatCone();
         DrawMesh();
 
     }
@@ -125,30 +125,29 @@ public class MeshGenerator : MonoBehaviour
     private void CreatSphere()
     {
         float angle = 0;
-        float sHeight = sRayon * 2;
+        float theta = 0;
 
         int vCenter = 0;
         if(sTronqueAngle != 0 )
             vCenter =  CreatVertex(Vector3.zero);
+
         int vUp = CreatVertex(new Vector3(0, sRayon, 0));
         int vDown = CreatVertex(new Vector3(0, -sRayon, 0));
-       
-  
-        float deltaTheta = Mathf.PI / sLoop;
+ 
 
         for (int l = 0; l < sLoop; l++)
         {
             angle = 0;
-            float theta1 = deltaTheta * l;
-            float theta2 = deltaTheta * (l + 1);
 
-            float y1 = sRayon * Mathf.Cos(theta1);
-            float y2 = sRayon * Mathf.Cos(theta2);
-            float r1 = sRayon * Mathf.Sin(theta1);
-            float r2 = sRayon * Mathf.Sin(theta2);
+            float y1 = sRayon * Mathf.Cos(theta);
+            float r1 = sRayon * Mathf.Sin(theta);
+            theta += Mathf.PI / sLoop;
+            float y2 = sRayon * Mathf.Cos(theta);
+            float r2 = sRayon * Mathf.Sin(theta);
 
             int v1 = CreatVertex(new Vector3(r1 * Mathf.Cos(angle), y1, r1 * Mathf.Sin(angle)));
             int v2 = CreatVertex(new Vector3(r2 * Mathf.Cos(angle), y2, r2 * Mathf.Sin(angle)));
+
             if(sTronqueAngle != 0)
             {
                 CreatTriangle(vCenter, v1, v2);
@@ -267,7 +266,7 @@ public class MeshGenerator : MonoBehaviour
         foreach (Vector3 v in verticices)
         {
             Gizmos.DrawSphere(v, 0.1f);
-            Handles.Label(v, "v"+verticices.IndexOf(v));
+            Handles.Label(v, "v_"+verticices.IndexOf(v));
         }
     }
 }
