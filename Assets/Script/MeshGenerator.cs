@@ -37,7 +37,7 @@ public class MeshGenerator : MonoBehaviour
     private MeshFilter mFilter;
 
     private Mesh mesh;
-    private List<Vector3> verticices = new List<Vector3>();
+    private List<Vector3> vertices = new List<Vector3>();
     private List<int> triangles = new List<int>();
 
     void Start()
@@ -64,7 +64,7 @@ public class MeshGenerator : MonoBehaviour
 
     private void CreatMesh()
     {
-        verticices.Clear();
+        vertices.Clear();
         triangles.Clear();
         mesh.Clear();
 
@@ -232,12 +232,12 @@ public class MeshGenerator : MonoBehaviour
 
     private int CreatVertex(Vector3 pos)
     {
-        if(!verticices.Contains(pos))
+        if(!vertices.Contains(pos))
         {
-            verticices.Add(pos);
+            vertices.Add(pos);
         }
 
-        return verticices.IndexOf(pos);
+        return vertices.IndexOf(pos);
 
     }
 
@@ -251,7 +251,7 @@ public class MeshGenerator : MonoBehaviour
 
     private void DrawMesh()
     {
-        mesh.vertices = verticices.ToArray();
+        mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
 
         mesh.RecalculateBounds();
@@ -263,10 +263,10 @@ public class MeshGenerator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        foreach (Vector3 v in verticices)
+        foreach (Vector3 v in vertices)
         {
             Gizmos.DrawSphere(v, 0.1f);
-            Handles.Label(v, "v_"+verticices.IndexOf(v));
+            Handles.Label(v, "v_"+vertices.IndexOf(v));
         }
     }
 }
