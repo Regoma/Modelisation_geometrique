@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Burst.Intrinsics;
@@ -16,11 +17,14 @@ public class MeshLoder : MonoBehaviour
     private Mesh mesh;
     private List<Vector3> vertices = new List<Vector3>();
     private List<int> triangles = new List<int>();
+    private List<Vector3> normals = new List<Vector3>();
 
     void Start()
     {
         Init();
         LoadMesh();
+
+        Invoke("WriteMesh", 3);
     }
 
     private void Init()
@@ -30,6 +34,30 @@ public class MeshLoder : MonoBehaviour
         mFilter = transform.AddComponent<MeshFilter>();
         mesh = new Mesh();
         mesh.name = "LoadedMesh";
+    }
+
+    private void WriteMesh()
+    {
+        string path = "Assets/Off_Meshes/NewMesh.off";
+        StreamWriter writer = new StreamWriter(path);
+        writer.WriteLine("OFF");
+        writer.WriteLine(vertices.Count + " " + (triangles.Count / 3 - 100) + " " + normals.Count);
+
+        foreach (Vector3 v in vertices)
+        {
+            string vertexLine = v.x + " " + v.y + " " + v.z;
+            vertexLine.Replace(',', '.');
+            writer.WriteLine(vertexLine);
+        }
+
+        for (int i = 0; i < triangles.Count - 300; i += 3)
+        {
+            writer.WriteLine("3 " + triangles[i] + " " + triangles[i+1] + " " + triangles[i+2]);
+        }
+
+        writer.Close();
+
+        Debug.Log("File writed");
     }
 
     private void LoadMesh()
@@ -56,7 +84,7 @@ public class MeshLoder : MonoBehaviour
         center = center / int.Parse(headers[0]);       
         for(int i = 0; i < vertices.Count; i++)
         {
-            vertices[i] = (vertices[i] - center) / maxSize;
+            vertices[i] = (vertices[i] - center) / maxSize ;
         }
             
 
@@ -70,6 +98,13 @@ public class MeshLoder : MonoBehaviour
         }
 
         reader.Close();
+
+
+        foreach (Vector3 v in vertices)
+        {
+            normals.Add(CreatNormal(v));
+        }
+
         DrawMesh();
     }
 
@@ -91,7 +126,7 @@ public class MeshLoder : MonoBehaviour
         triangles.Add(v3);
     }
 
-    private void CratNormal(Vector3 v)
+    private Vector3 CreatNormal(Vector3 v)
     {
         int index = vertices.IndexOf(v);
         Vector3 normal = Vector3.zero;
@@ -114,25 +149,33 @@ public class MeshLoder : MonoBehaviour
         }
         normal = (normal / nbNormal);
         normal.Normalize();
+
+        return normal;
     }
+
 
 
     private void DrawMesh()
     {
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
+        mesh.normals = normals.ToArray();
         mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
+        //mesh.RecalculateNormals();
         mesh.RecalculateTangents();
         mFilter.sharedMesh = mesh;
     }
 
     private void OnDrawGizmos()
     {
+        
         foreach (Vector3 v in vertices)
         {
             Gizmos.DrawSphere(v, 0.1f);
             Handles.Label(v, "v_" + vertices.IndexOf(v));
         }
+
     }
+
+
 }

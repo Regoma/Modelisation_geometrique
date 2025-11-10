@@ -532,7 +532,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: 382f20da93ac4e24ea5f71768fc88e3f, type: 2}
-  fileName: buddha.off
+  fileName: NewMesh.off
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
