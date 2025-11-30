@@ -258,7 +258,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   operation: 0
   size: 40
-  cubesize: 0.5
+  cubesize: 1
   voxelPrefab: {fileID: 2290816342780200508, guid: 24b1178bff91d0c4b814a46f2ccaf5d6, type: 3}
   resolution: 6
   meshs:
@@ -267,6 +267,7 @@ MonoBehaviour:
   - center: {x: 5, y: 0, z: 0}
     radius: 5
   brush: {fileID: 42399508}
+  brushWeight: 0.5
 --- !u!4 &125883595
 Transform:
   m_ObjectHideFlags: 0
@@ -369,7 +370,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -19.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

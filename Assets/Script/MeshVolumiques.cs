@@ -11,13 +11,14 @@ public enum Operation
 
 public class MeshVolumiques : MonoBehaviour
 {
-    public Operation operation;
-    public float size;
-    public float cubesize;
-    public GameObject voxelPrefab;
-    public int resolution;
-    public List<Sphere> meshs;
-    public Transform brush;
+    [SerializeField] private Operation operation;
+    [SerializeField] private float size;
+    [SerializeField] private float cubesize;
+    [SerializeField] private GameObject voxelPrefab;
+    [SerializeField] private int resolution;
+    [SerializeField] private List<Sphere> meshs;
+    [SerializeField] private Transform brush;
+    [SerializeField] private float brushWeight;
     private Node tree;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -51,22 +52,27 @@ public class MeshVolumiques : MonoBehaviour
         }
 
         Ray r = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if(Physics.Raycast(r,out RaycastHit hit, 50f));
+        if(Physics.Raycast(r,out RaycastHit hit, 50f))
         {
             Debug.Log(hit.point);
             brush.transform.position = hit.point;
+
+            if (Input.GetMouseButton(0))  // Clique pour peindre
+            {
+                PaintWithBrush(tree);
+
+                // Regénère la display
+                foreach (Transform c in transform)
+                    Destroy(c.gameObject);
+
+                NodeDisplay(tree);
+            }
         }
     }
 
 
     private void NodeDisplay(Node node)
     {
-        /*
-        foreach (Transform c in GetComponentInChildren<Transform>())
-        {
-            Destroy(c.gameObject);
-        }
-        */
         if (node.voxel)
         {
             GameObject voxel = Instantiate(voxelPrefab, node.position, new Quaternion(0, 0, 0, 0),transform);
@@ -152,11 +158,7 @@ public class MeshVolumiques : MonoBehaviour
                 return;
             }
 
-        }
-
-
-
-        
+        }     
         if (node.depth >= resolution)
             return;
 
@@ -166,54 +168,6 @@ public class MeshVolumiques : MonoBehaviour
             SphereNode(child);
     }
 
-    /*
-    private void SphereNode(Node node)
-    {
-        foreach(Sphere sphere in meshs)
-        {
-            if (node.voxel == true)
-                continue;
-            float sphereDist = Vector3.Distance(node.position, sphere.center);
-
-            //interieur
-            if (sphereDist + node.size * Mathf.Sqrt(3f) * 0.5f < sphere.radius)
-            {
-                node.leaf = true;
-                node.voxel = true;
-                node.childs = null;
-                return;
-            }
-            else if(sphereDist - node.size * Mathf.Sqrt(3f) * 0.5f > sphere.radius)
-            {
-                node.leaf = true;
-                node.voxel = false;
-                node.childs = null;
-                return;
-            }
-        }
-        
-        foreach (Sphere sphere in meshs)
-        {
-            float sphereDist = Vector3.Distance(node.position, sphere.center);
-            //exterieur
-            if (sphereDist - node.size * Mathf.Sqrt(3f) * 0.5f > sphere.radius)
-            {
-                node.leaf = true;
-                node.voxel = false;
-                node.childs = null;
-                return;
-            }
-        }
-        
-        if (node.depth>= resolution)
-            return;
-
-        NodeSubdivide(node);
-
-        foreach(Node child in node.childs)
-            SphereNode(child);
-    }
-    */
 
     private void NodeSubdivide(Node node)
     {
@@ -233,6 +187,41 @@ public class MeshVolumiques : MonoBehaviour
                 }
 
     }
+
+    public void PaintWithBrush(Node node)
+    {
+        float halfDiag = node.size * Mathf.Sqrt(3f) * 0.5f;
+        float brushRadius = brush.localScale.x * 0.5f;
+        float dist = Vector3.Distance(node.position, brush.position);
+
+        if (dist > brushRadius + halfDiag)
+            return;
+
+        if (node.leaf && node.depth < resolution)
+        {
+            NodeSubdivide(node);
+        }
+
+
+        if (node.leaf && node.depth >= resolution)
+        {
+
+            float attenu = 1- (dist / brushRadius);
+            node.weight += (brushWeight * attenu);
+
+            if (node.weight > 1f)
+                node.voxel = true;
+            return;
+        }
+
+
+
+
+        foreach (Node child in node.childs)
+            PaintWithBrush(child);
+    }
+
+
     private void OnDrawGizmosSelected()
     {
         if (tree == null)
@@ -268,7 +257,7 @@ public class MeshVolumiques : MonoBehaviour
             return;
         }
         else
-            foreach (var child in node.childs)
+            foreach (Node child in node.childs)
                 DrawGizmosNode(child);
 
     }
@@ -282,7 +271,7 @@ public class Node
     public float size;
     public int depth;
     public Node[] childs;
-    public float weight;
+    public float weight = 0;
 
 
     public Node(Vector3 pos, float s, int d)
