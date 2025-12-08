@@ -24,7 +24,7 @@ public class MeshLoder : MonoBehaviour
         Init();
         LoadMesh();
 
-        Invoke("WriteMesh", 3);
+        //Invoke("WriteMesh", 3);
     }
 
     private void Init()

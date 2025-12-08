@@ -6,9 +6,10 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+
 public class MeshLod : MonoBehaviour
 {
-    [SerializeField] private float epsilone;
+    [SerializeField][Range(0.025f,0.25f)] private float epsilone;
     [SerializeField] private Material material;
     [SerializeField] private string fileName;
     private MeshRenderer mRenderer;
@@ -20,11 +21,11 @@ public class MeshLod : MonoBehaviour
     private List<Vector3> normals = new List<Vector3>();
 
 
-    private List <Cell> grid = new List<Cell>();
     private Mesh lodMesh;
+    private List <Cell> grid = new List<Cell>();
     private List<Vector3> lodVertices = new List<Vector3>();
     private List<int> lodTriangles = new List<int>();
-    private List<Vector3> lodNormals = new List<Vector3>();
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -32,18 +33,24 @@ public class MeshLod : MonoBehaviour
         Init();
         LoadMesh();
         CreatGrid();
-        
+        FillGride();
+
     }
 
     private void Update()
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            LoadMesh();
-            CreatGrid();
-            
+            Remesh();
+
         }
         //CreatGrid();
+    }
+
+    private void OnValidate()
+    {
+        CreatGrid();
+        FillGride();
     }
 
     private void CreatGrid()
@@ -64,7 +71,7 @@ public class MeshLod : MonoBehaviour
                 for (z = -grideSize.z / 2; z <= grideSize.z / 2; z++)
                     grid.Add(new(grideOrigine + new Vector3(x * epsilone, y * epsilone, z * epsilone)));
 
-        FillGride();
+        
     }
 
     private void FillGride()
@@ -73,7 +80,9 @@ public class MeshLod : MonoBehaviour
 
         foreach (Cell c in grid)
         {
-            foreach(Vector3 v in vertices)
+            c.cellVertices.Clear();
+            c.avregeVertex = Vector3.zero;
+            foreach (Vector3 v in vertices)
             {
                 if(v.x >= c.pos.x - half && v.x <= c.pos.x + half &&
                 v.y >= c.pos.y - half && v.y <= c.pos.y + half &&
@@ -83,26 +92,70 @@ public class MeshLod : MonoBehaviour
                     c.avregeVertex += v;
                 }
             }
-
-            c.avregeVertex /= c.cellVertices.Count;
+            if(c.cellVertices.Count > 0)
+                c.avregeVertex /= c.cellVertices.Count;
         }
 
-        Remesh();
+        
     }
 
     private void Remesh()
     {
         lodVertices.Clear();
         lodTriangles.Clear();
-        lodNormals.Clear();
 
         foreach (Cell c in grid)
         {
-            foreach (Vector3 v in vertices)
+            if(c.cellVertices.Count > 0)
             {
-                
+                lodVertices.Add(c.avregeVertex);
+                c.index = lodVertices.IndexOf(c.avregeVertex);
             }
+                
         }
+
+        for (int i = 0; i < triangles.Count; i += 3)
+        {
+            Vector3 v1 = vertices[triangles[i]];
+            Vector3 v2 = vertices[triangles[i + 1]];
+            Vector3 v3 = vertices[triangles[i + 2]];
+
+            Cell c1 = GetCell(v1);
+            Cell c2 = GetCell(v2);
+            Cell c3 = GetCell(v3);
+
+            if (c1 == null || c2 == null || c3 == null) 
+                continue;
+            if (c1 == c2 || c2 == c3 || c1 == c3) 
+                continue;
+
+            lodTriangles.Add(c1.index);
+            lodTriangles.Add(c2.index);
+            lodTriangles.Add(c3.index);
+        }
+        
+        lodMesh = new Mesh();
+        lodMesh.vertices = lodVertices.ToArray();
+        lodMesh.triangles = lodTriangles.ToArray();
+        lodMesh.RecalculateBounds();
+        lodMesh.RecalculateNormals();
+        lodMesh.RecalculateTangents();
+        mFilter.sharedMesh = lodMesh;
+        
+
+        //DrawMesh();
+
+
+    }
+
+    private Cell GetCell(Vector3 vertex)
+    {
+        foreach (Cell c in grid)
+        {
+            if(c.cellVertices.Contains(vertex))
+                return c;
+        }
+        return null;
     }
 
     private void Init()
@@ -157,12 +210,12 @@ public class MeshLod : MonoBehaviour
 
         reader.Close();
 
-
+        /*
         foreach (Vector3 v in vertices)
         {
             normals.Add(CreatNormal(v));
         }
-
+        */
         DrawMesh();
     }
 
@@ -243,11 +296,12 @@ public class Cell
     public Vector3 pos;
     public List<Vector3> cellVertices;
     public Vector3 avregeVertex;
-
+    public int index;
     public Cell(Vector3 _pos)
     {
         pos = _pos;
         cellVertices = new List<Vector3>();
         avregeVertex = Vector3.zero;
     }
+
 }
