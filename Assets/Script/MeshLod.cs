@@ -34,7 +34,6 @@ public class MeshLod : MonoBehaviour
         LoadMesh();
         CreatGrid();
         FillGride();
-
     }
 
     private void Update()
@@ -283,8 +282,8 @@ public class MeshLod : MonoBehaviour
     {
         foreach(Cell c in grid)
         {
-            Gizmos.DrawWireCube(c.pos, Vector3.one * epsilone);
-            Gizmos.DrawSphere(c.avregeVertex, 0.005f);
+            Gizmos.DrawWireCube(c.pos + transform.position, Vector3.one * epsilone);
+            Gizmos.DrawSphere(c.avregeVertex + transform.position, 0.005f);
         }
         
     }

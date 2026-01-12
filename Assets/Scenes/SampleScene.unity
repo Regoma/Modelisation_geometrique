@@ -1014,7 +1014,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   iteration: 1
   material: {fileID: 2100000, guid: 382f20da93ac4e24ea5f71768fc88e3f, type: 2}
-  fileName: icoshere.off
+  fileName: bunny.off
 --- !u!4 &1595538699
 Transform:
   m_ObjectHideFlags: 0

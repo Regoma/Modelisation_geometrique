@@ -17,7 +17,8 @@ public class Loop : MonoBehaviour
     private Mesh mesh;
     private List<Vector3> vertices = new List<Vector3>();
     private List<int> triangles = new List<int>();
-
+    List<int> oldTriangles = new List<int>();
+    List<Vector3> oldVertices = new List<Vector3>();
     void Start()
     {
         Init();
@@ -27,7 +28,7 @@ public class Loop : MonoBehaviour
     private void Update()
     {
         if(Input.GetKeyUp(KeyCode.Space))
-            LoadMesh();
+            SubdivideMesh();
     }
 
     private void Init()
@@ -77,20 +78,21 @@ public class Loop : MonoBehaviour
 
         reader.Close();
 
-        SubdivideMesh();
+        DrawMesh();
     }
-
+    
     private void SubdivideMesh()
     {
         for (int subdivide = 0; subdivide < iteration; subdivide++)
         {
-            List<int> oldTriangles = new List<int>(triangles);
+            oldTriangles = new List<int>(triangles);
+            oldVertices = new List<Vector3>(vertices);
             triangles.Clear();
             for (int i = 0; i < oldTriangles.Count; i += 3)
             {
-                Vector3 v1 = vertices[oldTriangles[i]];
-                Vector3 v2 = vertices[oldTriangles[i + 1]];
-                Vector3 v3 = vertices[oldTriangles[i + 2]];
+                Vector3 v1 = oldVertices[oldTriangles[i]];
+                Vector3 v2 = oldVertices[oldTriangles[i + 1]];
+                Vector3 v3 = oldVertices[oldTriangles[i + 2]];
 
                 Vector3 e1 = v2 - v1;
                 Vector3 e2 = v3 - v2;
@@ -107,8 +109,8 @@ public class Loop : MonoBehaviour
 
             }
 
-            List<Vector3> oldVertices = new List<Vector3>(vertices);
-            for (int j = 0; j < vertices.Count; j++)
+            List<Vector3> newVertices = new List<Vector3>();
+            for (int j = 0; j < oldVertices.Count; j++)
             {
                 List<int> neighbor = GetNeighborVertices(j);
                 Debug.Log("V_" + j + ": ");
@@ -126,57 +128,127 @@ public class Loop : MonoBehaviour
         }
         DrawMesh();
     }
-
-     private List<int> GetNeighborVertices(int index)
+    /*
+    private void SubdivideMesh()
     {
-        List<int> vertices = new List<int>();
-        for (int i = 0; i < triangles.Count; i += 3)
+        for (int subdivide = 0; subdivide < iteration; subdivide++)
         {
-            if(triangles[i] == index)
+            oldTriangles = new List<int>(triangles);
+            oldVertices = new List<Vector3>(vertices);
+
+            triangles.Clear();
+            vertices = new List<Vector3>(oldVertices); // IMPORTANT
+
+            for (int i = 0; i < oldTriangles.Count; i += 3)
             {
-                if(!vertices.Contains(triangles[i+1]))
-                    vertices.Add(triangles[i+1]);
-                if(!vertices.Contains(triangles[i+2]))
-                    vertices.Add(triangles[i+2]);
+                int i1 = oldTriangles[i];
+                int i2 = oldTriangles[i + 1];
+                int i3 = oldTriangles[i + 2];
+
+                Vector3 v1 = oldVertices[i1];
+                Vector3 v2 = oldVertices[i2];
+                Vector3 v3 = oldVertices[i3];
+
+                int m12 = CreatVertex((v1 + v2) * 0.5f);
+                int m23 = CreatVertex((v2 + v3) * 0.5f);
+                int m31 = CreatVertex((v3 + v1) * 0.5f);
+
+                CreatTriangle(i1, m12, m31);
+                CreatTriangle(m12, i2, m23);
+                CreatTriangle(m31, m23, i3);
+                CreatTriangle(m12, m23, m31);
             }
-            if (triangles[i+1] == index)
+
+            // Lissage UNIQUEMENT des anciens sommets
+            for (int j = 0; j < oldVertices.Count; j++)
             {
-                if(!vertices.Contains(triangles[i+2]))
-                    vertices.Add(triangles[i+2]);
-                if(!vertices.Contains(triangles[i]))
-                    vertices.Add(triangles[i]);
-            }
-            if(triangles[i+2] == index)
-            {
-                if(!vertices.Contains(triangles[i + 1]))
-                vertices.Add(triangles[i+1]);
-                if (!vertices.Contains(triangles[i]))
-                    vertices.Add(triangles[i]);
+                List<int> neighbors = GetNeighborVertices(j);
+                if (neighbors.Count == 0) continue;
+
+                Vector3 pos = oldVertices[j];
+                foreach (int n in neighbors)
+                    pos += oldVertices[n];
+
+                pos /= (neighbors.Count + 1);
+                vertices[j] = pos;
             }
         }
-        return vertices;
+
+        DrawMesh();
+    }
+    */
+
+    private List<int> GetNeighborVertices(int index)
+    {
+        List<int> verticesN = new List<int>();
+        for (int i = 0; i < oldTriangles.Count; i += 3)
+        {
+            if(oldTriangles[i] == index)
+            {
+                if(!verticesN.Contains(oldTriangles[i+1]))
+                    verticesN.Add(oldTriangles[i+1]);
+                if(!verticesN.Contains(oldTriangles[i+2]))
+                    verticesN.Add(oldTriangles[i+2]);
+            }
+            if (oldTriangles[i+1] == index)
+            {
+                if(!verticesN.Contains(oldTriangles[i+2]))
+                    verticesN.Add(oldTriangles[i+2]);
+                if(!verticesN.Contains(oldTriangles[i]))
+                    verticesN.Add(oldTriangles[i]);
+            }
+            if(oldTriangles[i+2] == index)
+            {
+                if(!verticesN.Contains(oldTriangles[i + 1]))
+                verticesN.Add(oldTriangles[i+1]);
+                if (!verticesN.Contains(oldTriangles[i]))
+                    verticesN.Add(oldTriangles[i]);
+            }
+        }
+        return verticesN;
     }
 
     private int CreatVertex(Vector3 pos)
     {
-        if (!ContainsPos(pos))
+        Vector3 roundPos = RoundVector(pos);
+
+        if (!vertices.Contains(roundPos))
         {
-            vertices.Add(pos);
+            vertices.Add(roundPos);
         }
 
-        return IndexOfPos(pos);
+        return vertices.IndexOf(roundPos);
 
     }
 
     private bool ContainsPos(Vector3 pos)
     {
+        pos *= 10000;
+        Vector3Int position = Vector3Int.FloorToInt(pos);
         foreach(Vector3 v in vertices)
         {
-            if(Vector3.Distance(pos, v) <0.01f)
+            Vector3Int vPos = Vector3Int.FloorToInt(v * 10000);
+            if(pos == v)
                 return true;
+            /*
+            if (Vector3.Distance(pos, v) <0.01f)
+                return true;
+            */
         }
 
         return false;
+    }
+
+    private Vector3 RoundVector(Vector3 pos)
+    {
+        Vector3 v = pos * 10000;
+        Vector3 roundPos = new Vector3(
+        v.x = Mathf.Round(v.x),
+        v.y = Mathf.Round(v.y),
+        v.z = Mathf.Round(v.z));
+        roundPos /= 10000;
+        return roundPos;
+
     }
 
     private int IndexOfPos(Vector3 pos)
