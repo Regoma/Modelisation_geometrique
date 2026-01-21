@@ -696,7 +696,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &701285740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1012,7 +1012,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7e7ff69798621c4db626c95992e3273, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  iteration: 1
   material: {fileID: 2100000, guid: 382f20da93ac4e24ea5f71768fc88e3f, type: 2}
   fileName: bunny.off
 --- !u!4 &1595538699
